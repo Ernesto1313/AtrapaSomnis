@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.splashscreen)
     implementation(libs.gson)
     implementation(libs.material.icons.extended)
+    implementation(libs.play.services.coroutines)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -44,6 +44,7 @@ play-services-location = { group = "com.google.android.gms", name = "play-servic
 splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+play-services-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
