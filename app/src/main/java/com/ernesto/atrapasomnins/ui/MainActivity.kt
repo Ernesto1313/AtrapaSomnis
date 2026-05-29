@@ -35,6 +35,7 @@ import com.ernesto.atrapasomnins.ui.theme.LilaClaro
 import com.ernesto.atrapasomnins.ui.theme.Morado
 import com.ernesto.atrapasomnins.ui.theme.TextoApagado
 import com.ernesto.atrapasomnins.ui.inicio.InicioScreen
+import com.ernesto.atrapasomnins.ui.registro.RegistroScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -166,9 +167,11 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Pantalla.RegistroSueno.ruta) {
-                            // Flujo de registro de sueño paso a paso
-                            // Se implementará en el siguiente prompt
-                            Box(modifier = Modifier.fillMaxSize())
+                            RegistroScreen(
+                                onTerminar = {
+                                    navController.popBackStack()
+                                }
+                            )
                         }
                         composable(
                             route = Pantalla.DetalleSueno.ruta,
