@@ -34,7 +34,9 @@ import com.ernesto.atrapasomnins.ui.theme.AzulNocheMedio
 import com.ernesto.atrapasomnins.ui.theme.LilaClaro
 import com.ernesto.atrapasomnins.ui.theme.Morado
 import com.ernesto.atrapasomnins.ui.theme.TextoApagado
+import com.ernesto.atrapasomnins.ui.ajustes.AjustesScreen
 import com.ernesto.atrapasomnins.ui.detalle.DetalleSuenoScreen
+import com.ernesto.atrapasomnins.ui.estadisticas.EstadisticasScreen
 import com.ernesto.atrapasomnins.ui.inicio.InicioScreen
 import com.ernesto.atrapasomnins.ui.registro.RegistroScreen
 import dagger.hilt.android.AndroidEntryPoint
@@ -185,14 +187,10 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Pantalla.Estadisticas.ruta) {
-                            // Pantalla de estadísticas
-                            // Se implementará en el siguiente prompt
-                            Box(modifier = Modifier.fillMaxSize())
+                            EstadisticasScreen()
                         }
                         composable(Pantalla.Ajustes.ruta) {
-                            // Pantalla de ajustes y gestión de etiquetas
-                            // Se implementará en el siguiente prompt
-                            Box(modifier = Modifier.fillMaxSize())
+                            AjustesScreen()
                         }
                     }
                 }

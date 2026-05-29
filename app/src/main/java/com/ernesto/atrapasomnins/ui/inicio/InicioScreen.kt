@@ -32,6 +32,8 @@ import com.ernesto.atrapasomnins.data.model.EstadoSueno
 import com.ernesto.atrapasomnins.data.model.Sueno
 import com.ernesto.atrapasomnins.ui.SuenoViewModel
 import com.ernesto.atrapasomnins.ui.theme.*
+import com.ernesto.atrapasomnins.sensor.NivelLuz
+import com.ernesto.atrapasomnins.sensor.rememberNivelLuz
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -42,6 +44,15 @@ fun InicioScreen(
     onVerDetalle: (String) -> Unit,
     viewModel: SuenoViewModel = hiltViewModel()
 ) {
+    val nivelLuz = rememberNivelLuz()
+
+    // El fondo cambia ligeramente según la luz ambiente
+    val colorFondo = when (nivelLuz) {
+        NivelLuz.OSCURO -> AzulNoche                       // muy oscuro
+        NivelLuz.NORMAL -> AzulNoche                       // normal
+        NivelLuz.BRILLANTE -> AzulNoche.copy(alpha = 0.9f) // un poco más claro
+    }
+
     val suenos by viewModel.suenos.collectAsStateWithLifecycle()
     val etiquetas by viewModel.etiquetas.collectAsStateWithLifecycle()
     val filtroActivo by viewModel.filtroEtiqueta.collectAsStateWithLifecycle()
@@ -52,7 +63,7 @@ fun InicioScreen(
     }
 
     Scaffold(
-        containerColor = AzulNoche,
+        containerColor = colorFondo,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -95,7 +106,7 @@ fun InicioScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(AzulNoche)
+                .background(colorFondo)
         ) {
             // Fila de filtros por etiqueta
             if (etiquetas.isNotEmpty()) {
