@@ -34,6 +34,7 @@ import com.ernesto.atrapasomnins.ui.theme.AzulNocheMedio
 import com.ernesto.atrapasomnins.ui.theme.LilaClaro
 import com.ernesto.atrapasomnins.ui.theme.Morado
 import com.ernesto.atrapasomnins.ui.theme.TextoApagado
+import com.ernesto.atrapasomnins.ui.inicio.InicioScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -155,9 +156,14 @@ class MainActivity : ComponentActivity() {
                             .padding(paddingValues)
                     ) {
                         composable(Pantalla.Inicio.ruta) {
-                            // Pantalla principal con la lista de sueños
-                            // Se implementará en el siguiente prompt
-                            Box(modifier = Modifier.fillMaxSize())
+                            InicioScreen(
+                                onNuevoSueno = {
+                                    navController.navigate(Pantalla.RegistroSueno.ruta)
+                                },
+                                onVerDetalle = { id ->
+                                    navController.navigate(Pantalla.DetalleSueno.crearRuta(id))
+                                }
+                            )
                         }
                         composable(Pantalla.RegistroSueno.ruta) {
                             // Flujo de registro de sueño paso a paso
