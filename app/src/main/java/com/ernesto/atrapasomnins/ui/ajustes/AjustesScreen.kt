@@ -18,8 +18,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ernesto.atrapasomnins.data.model.CategoriaEtiqueta
 import com.ernesto.atrapasomnins.notificaciones.cancelarRecordatorio
 import com.ernesto.atrapasomnins.notificaciones.programarRecordatorioDiario
+import com.ernesto.atrapasomnins.sensor.NivelLuz
+import com.ernesto.atrapasomnins.sensor.rememberNivelLuz
 import com.ernesto.atrapasomnins.ui.SuenoViewModel
 import com.ernesto.atrapasomnins.ui.theme.*
 
@@ -30,8 +33,8 @@ fun AjustesScreen(
 ) {
     val context = LocalContext.current
     val etiquetas by viewModel.etiquetas.collectAsStateWithLifecycle()
+    val nivelLuz = rememberNivelLuz()
 
-    // Preferencias del recordatorio guardadas en SharedPreferences
     val prefs = context.getSharedPreferences("ajustes", Context.MODE_PRIVATE)
     var recordatorioActivado by remember {
         mutableStateOf(prefs.getBoolean("recordatorio_activado", false))
@@ -43,11 +46,9 @@ fun AjustesScreen(
         mutableStateOf(prefs.getInt("minuto_recordatorio", 0))
     }
 
-    // Control del diálogo de nueva etiqueta
     var mostrarDialogoEtiqueta by remember { mutableStateOf(false) }
     var textoNuevaEtiqueta by remember { mutableStateOf("") }
 
-    // Control del TimePicker
     var mostrarTimePicker by remember { mutableStateOf(false) }
     val timePickerState = rememberTimePickerState(
         initialHour = horaRecordatorio,
@@ -118,7 +119,6 @@ fun AjustesScreen(
                         )
                     }
 
-                    // Selector de hora (solo si el recordatorio está activo)
                     if (recordatorioActivado) {
                         OutlinedButton(
                             onClick = { mostrarTimePicker = true },
@@ -143,40 +143,53 @@ fun AjustesScreen(
             // ── Gestión de etiquetas ──────────────────────────
             SeccionAjustes(titulo = "Mis etiquetas") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Solo mostramos las personalizadas, las predefinidas no se borran
-                    val personalizadas = etiquetas.filter { it.esPersonalizada }
-                    if (personalizadas.isEmpty()) {
+                    val etiquetasPersonalizadas = etiquetas.filter { it.esPersonalizada }
+                    val porCategoria = etiquetasPersonalizadas.groupBy { it.categoria }
+
+                    if (etiquetasPersonalizadas.isEmpty()) {
                         Text(
                             "Aún no has creado etiquetas personalizadas",
                             color = TextoApagado,
                             fontSize = 13.sp
                         )
                     } else {
-                        personalizadas.forEach { etiqueta ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(etiqueta.nombre, color = TextoPrincipal)
-                                IconButton(
-                                    onClick = {
-                                        // TODO: añadir eliminar etiqueta al repositorio
+                        listOf(
+                            CategoriaEtiqueta.SUENO to "Sueño",
+                            CategoriaEtiqueta.COMPANERO to "Compañero",
+                            CategoriaEtiqueta.LUGAR to "Lugar",
+                            CategoriaEtiqueta.SUSTANCIA to "Sustancia",
+                            CategoriaEtiqueta.PERSONALIZADA to "Personalizadas"
+                        ).forEach { (cat, nombreCat) ->
+                            val lista = porCategoria[cat]
+                            if (!lista.isNullOrEmpty()) {
+                                Text(
+                                    nombreCat,
+                                    color = TextoApagado,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                lista.forEach { etiqueta ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(etiqueta.nombre, color = TextoPrincipal)
+                                        IconButton(onClick = { /* eliminar */ }) {
+                                            Icon(
+                                                Icons.Default.Delete,
+                                                contentDescription = "Eliminar",
+                                                tint = RojoError.copy(alpha = 0.6f),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     }
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Eliminar",
-                                        tint = RojoError.copy(alpha = 0.6f),
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                    HorizontalDivider(color = TextoApagado.copy(alpha = 0.1f))
                                 }
                             }
-                            HorizontalDivider(color = TextoApagado.copy(alpha = 0.1f))
                         }
                     }
 
-                    // Botón para añadir nueva etiqueta
                     OutlinedButton(
                         onClick = { mostrarDialogoEtiqueta = true },
                         shape = RoundedCornerShape(12.dp),
@@ -203,6 +216,51 @@ fun AjustesScreen(
                         "Tu diario personal de sueños",
                         color = TextoApagado,
                         fontSize = 13.sp
+                    )
+                }
+            }
+
+            // ── Sensor de luz ─────────────────────────────────
+            SeccionAjustes(titulo = "Sensor de luz") {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Nivel de luz en la habitación ahora mismo:",
+                        color = TextoApagado,
+                        fontSize = 13.sp
+                    )
+                    val (emoji, descripcion, colorLuz) = when (nivelLuz) {
+                        NivelLuz.OSCURO -> Triple("🌑", "Oscuro — buena hora para dormir", TextoApagado)
+                        NivelLuz.NORMAL -> Triple("🌤️", "Luz normal", LilaClaro)
+                        NivelLuz.BRILLANTE -> Triple("☀️", "Muy iluminado", AmarilloAviso)
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(emoji, fontSize = 36.sp)
+                        Column {
+                            Text(descripcion, color = colorLuz, fontWeight = FontWeight.Medium)
+                            Text(
+                                when (nivelLuz) {
+                                    NivelLuz.OSCURO -> "Menos de 10 lux"
+                                    NivelLuz.NORMAL -> "Entre 10 y 1000 lux"
+                                    NivelLuz.BRILLANTE -> "Más de 1000 lux"
+                                },
+                                color = TextoApagado,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                    val progreso = when (nivelLuz) {
+                        NivelLuz.OSCURO -> 0.1f
+                        NivelLuz.NORMAL -> 0.5f
+                        NivelLuz.BRILLANTE -> 1.0f
+                    }
+                    LinearProgressIndicator(
+                        progress = { progreso },
+                        modifier = Modifier.fillMaxWidth().height(6.dp),
+                        color = colorLuz,
+                        trackColor = AzulNoche
                     )
                 }
             }

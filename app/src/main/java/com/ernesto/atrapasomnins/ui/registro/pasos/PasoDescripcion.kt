@@ -20,7 +20,8 @@ fun PasoDescripcion(viewModel: RegistroViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(24.dp)
+            .imePadding(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
@@ -41,7 +42,7 @@ fun PasoDescripcion(viewModel: RegistroViewModel) {
             onValueChange = { viewModel.descripcion.value = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
+                .heightIn(min = 160.dp, max = 260.dp),
             placeholder = {
                 Text(
                     "Estaba en un lugar extraño y de repente...",
@@ -61,6 +62,7 @@ fun PasoDescripcion(viewModel: RegistroViewModel) {
             minLines = 5
         )
 
+        Spacer(Modifier.weight(1f))
         BotonSiguiente(
             onClick = { viewModel.avanzar() },
             habilitado = texto.isNotBlank()

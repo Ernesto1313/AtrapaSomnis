@@ -1,27 +1,39 @@
 package com.ernesto.atrapasomnins.data.repository
 
-import com.ernesto.atrapasomnins.data.model.ETIQUETAS_PREDEFINIDAS
+import com.ernesto.atrapasomnins.data.model.CategoriaEtiqueta
 import com.ernesto.atrapasomnins.data.model.Etiqueta
+import com.ernesto.atrapasomnins.data.model.ETIQUETAS_PREDEFINIDAS
 import com.ernesto.atrapasomnins.data.storage.JsonStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import javax.inject.Inject
 
-// Repositorio de etiquetas: combina las predefinidas con las del usuario
 class EtiquetaRepository @Inject constructor(
     private val storage: JsonStorage
 ) {
-    // Devuelve todas las etiquetas: primero las predefinidas, luego las del usuario
+    // Devuelve todas las etiquetas de una categoría concreta
+    suspend fun obtenerPorCategoria(categoria: CategoriaEtiqueta): List<Etiqueta> =
+        withContext(Dispatchers.IO) {
+            val personalizadas = storage.cargarEtiquetas()
+                .filter { it.categoria == categoria }
+            ETIQUETAS_PREDEFINIDAS.filter { it.categoria == categoria } + personalizadas
+        }
+
+    // Devuelve todas sin distinción
     suspend fun obtenerTodas(): List<Etiqueta> = withContext(Dispatchers.IO) {
-        val personalizadas = storage.cargarEtiquetas()
-        ETIQUETAS_PREDEFINIDAS + personalizadas
+        ETIQUETAS_PREDEFINIDAS + storage.cargarEtiquetas()
     }
 
-    // Crea una etiqueta nueva personalizada
-    suspend fun crearEtiqueta(nombre: String): Etiqueta = withContext(Dispatchers.IO) {
+    // Crea una etiqueta personalizada en la categoría indicada
+    suspend fun crearEtiqueta(
+        nombre: String,
+        categoria: CategoriaEtiqueta = CategoriaEtiqueta.PERSONALIZADA
+    ): Etiqueta = withContext(Dispatchers.IO) {
         val nueva = Etiqueta(
-            id = java.util.UUID.randomUUID().toString(),
+            id = UUID.randomUUID().toString(),
             nombre = nombre,
+            categoria = categoria,
             esPersonalizada = true
         )
         val lista = storage.cargarEtiquetas().toMutableList()
@@ -30,7 +42,6 @@ class EtiquetaRepository @Inject constructor(
         nueva
     }
 
-    // Elimina una etiqueta personalizada (las predefinidas no se pueden borrar)
     suspend fun eliminar(id: String) = withContext(Dispatchers.IO) {
         val lista = storage.cargarEtiquetas().filter { it.id != id }
         storage.guardarEtiquetas(lista)

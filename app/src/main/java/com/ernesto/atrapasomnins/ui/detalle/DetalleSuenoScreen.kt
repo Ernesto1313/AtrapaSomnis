@@ -35,17 +35,22 @@ fun DetalleSuenoScreen(
     onVolver: () -> Unit,
     viewModel: SuenoViewModel = hiltViewModel()
 ) {
-    // Buscamos el sueño concreto en la lista ya cargada
     val suenos by viewModel.suenos.collectAsStateWithLifecycle()
     val etiquetas by viewModel.etiquetas.collectAsStateWithLifecycle()
-    val ubicaciones by viewModel.ubicaciones.collectAsStateWithLifecycle()
     val sueno = suenos.find { it.id == id }
 
-    // Diálogo de confirmación antes de borrar
+    LaunchedEffect(id) { viewModel.cargarDatos() }
+
     var mostrarConfirmacionBorrar by remember { mutableStateOf(false) }
 
+    if (suenos.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = Morado)
+        }
+        return
+    }
+
     if (sueno == null) {
-        // El sueño no existe, volvemos atrás
         LaunchedEffect(Unit) { onVolver() }
         return
     }
@@ -75,7 +80,6 @@ fun DetalleSuenoScreen(
                     }
                 },
                 actions = {
-                    // Botón para eliminar el sueño
                     IconButton(onClick = { mostrarConfirmacionBorrar = true }) {
                         Icon(
                             Icons.Default.Delete,
@@ -105,7 +109,6 @@ fun DetalleSuenoScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Fecha y estado
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -115,7 +118,6 @@ fun DetalleSuenoScreen(
                 EstadoBadgeDetalle(estado = sueno.estado)
             }
 
-            // Contenido según el estado del sueño
             when (sueno.estado) {
                 EstadoSueno.RECORDADO -> ContenidoRecordado(sueno, etiquetas)
                 EstadoSueno.NO_RECUERDO -> {
@@ -126,7 +128,6 @@ fun DetalleSuenoScreen(
                 }
             }
 
-            // Qué causó el despertar
             if (sueno.causasDespertar.isNotEmpty()) {
                 SeccionDetalle(titulo = "Te despertó") {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -137,17 +138,15 @@ fun DetalleSuenoScreen(
                 }
             }
 
-            // Contexto de la noche
             sueno.contextoNoche?.let { contexto ->
                 SeccionDetalle(titulo = "Contexto de la noche") {
-                    ContextoDetalle(contexto, ubicaciones)
+                    ContextoDetalle(contexto = contexto, todasEtiquetas = etiquetas)
                 }
             }
         }
         } // AnimatedVisibility
     }
 
-    // Diálogo para confirmar el borrado
     if (mostrarConfirmacionBorrar) {
         AlertDialog(
             onDismissRequest = { mostrarConfirmacionBorrar = false },
@@ -178,13 +177,11 @@ fun DetalleSuenoScreen(
     }
 }
 
-// Contenido completo cuando el sueño fue recordado
 @Composable
 private fun ContenidoRecordado(
     sueno: Sueno,
     etiquetas: List<com.ernesto.atrapasomnins.data.model.Etiqueta>
 ) {
-    // Descripción del sueño
     if (!sueno.descripcion.isNullOrBlank()) {
         SeccionDetalle(titulo = "Descripción") {
             Text(
@@ -196,7 +193,6 @@ private fun ContenidoRecordado(
         }
     }
 
-    // Intensidad y si fue lúcido
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         if (sueno.intensidad != null) {
             TarjetaDato(
@@ -215,7 +211,6 @@ private fun ContenidoRecordado(
         }
     }
 
-    // Etiquetas del sueño
     if (sueno.etiquetas.isNotEmpty()) {
         SeccionDetalle(titulo = "Etiquetas") {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -230,25 +225,30 @@ private fun ContenidoRecordado(
     }
 }
 
-// Muestra los datos del contexto de la noche anterior
 @Composable
 private fun ContextoDetalle(
     contexto: ContextoNoche,
-    ubicaciones: List<com.ernesto.atrapasomnins.data.model.Ubicacion>
+    todasEtiquetas: List<com.ernesto.atrapasomnins.data.model.Etiqueta>
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Compañero
-        contexto.companero?.let {
-            FilaDato("Con quién", it.replaceFirstChar { c -> c.uppercase() })
+        if (contexto.etiquetasCompanero.isNotEmpty()) {
+            val nombres = contexto.etiquetasCompanero.mapNotNull { id ->
+                todasEtiquetas.find { it.id == id }?.nombre
+            }.joinToString(", ")
+            FilaDato("Con quién", nombres)
         }
-        // Cansancio y estrés
+        if (contexto.etiquetasLugar.isNotEmpty()) {
+            val nombres = contexto.etiquetasLugar.mapNotNull { id ->
+                todasEtiquetas.find { it.id == id }?.nombre
+            }.joinToString(", ")
+            FilaDato("Dónde", nombres)
+        }
         contexto.cansancio?.let {
             FilaDato("Cansancio", "★".repeat(it) + "☆".repeat(5 - it))
         }
         contexto.estres?.let {
             FilaDato("Estrés", "★".repeat(it) + "☆".repeat(5 - it))
         }
-        // Hábitos
         contexto.comidaPesada?.let {
             FilaDato("Comida pesada", if (it) "Sí" else "No")
         }
@@ -261,26 +261,21 @@ private fun ContextoDetalle(
         contexto.ejercicio?.let {
             FilaDato("Ejercicio", if (it) "Sí" else "No")
         }
-        // Sustancias
-        contexto.alcohol?.let {
-            FilaDato("Alcohol", if (it) "Sí" else "No")
+        if (contexto.etiquetasSustancia.isNotEmpty()) {
+            val nombres = contexto.etiquetasSustancia.mapNotNull { id ->
+                todasEtiquetas.find { it.id == id }?.nombre
+            }.joinToString(", ")
+            FilaDato("Sustancias", nombres)
         }
-        contexto.melatonina?.let {
-            FilaDato("Melatonina", if (it) "Sí" else "No")
-        }
-        // Temperatura
         contexto.temperatura?.let {
             val texto = when (it) {
                 "frio" -> "🥶 Frío"
+                "fresco" -> "❄️ Fresco"
+                "calido" -> "🌤️ Cálido"
                 "calor" -> "🥵 Calor"
                 else -> "😊 Normal"
             }
             FilaDato("Temperatura", texto)
-        }
-        // Ubicación
-        contexto.ubicacionId?.let { id ->
-            val ubi = ubicaciones.find { it.id == id }
-            if (ubi != null) FilaDato("Ubicación", "📍 ${ubi.nombre}")
         }
     }
 }
@@ -372,7 +367,6 @@ private fun EstadoBadgeDetalle(estado: EstadoSueno) {
     }
 }
 
-// Convierte el id de causa despertar a texto legible
 private fun textoDespertar(id: String): String = when (id) {
     "alarma" -> "⏰ Alarma"
     "luz" -> "☀️ Luz"

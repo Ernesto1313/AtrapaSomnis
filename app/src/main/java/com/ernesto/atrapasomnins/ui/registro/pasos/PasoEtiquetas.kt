@@ -16,12 +16,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ernesto.atrapasomnins.data.model.CategoriaEtiqueta
 import com.ernesto.atrapasomnins.ui.registro.RegistroViewModel
 import com.ernesto.atrapasomnins.ui.theme.*
 
 @Composable
 fun PasoEtiquetas(viewModel: RegistroViewModel) {
-    val etiquetas by viewModel.etiquetas.collectAsStateWithLifecycle()
+    val etiquetas by viewModel.etiquetasSueno.collectAsStateWithLifecycle()
     val seleccionadas by viewModel.etiquetasSeleccionadas.collectAsStateWithLifecycle()
 
     // Estado local para el diálogo de nueva etiqueta
@@ -144,7 +145,11 @@ fun PasoEtiquetas(viewModel: RegistroViewModel) {
                 TextButton(
                     onClick = {
                         if (textoNuevaEtiqueta.isNotBlank()) {
-                            viewModel.crearYSeleccionarEtiqueta(textoNuevaEtiqueta.trim())
+                            viewModel.crearYSeleccionarEtiqueta(
+                                textoNuevaEtiqueta.trim(),
+                                CategoriaEtiqueta.SUENO,
+                                viewModel.etiquetasSeleccionadas
+                            )
                             textoNuevaEtiqueta = ""
                             mostrarDialogo = false
                         }
