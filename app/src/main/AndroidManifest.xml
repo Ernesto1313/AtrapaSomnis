@@ -17,6 +17,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AtrapaSomnis.Splash">
+        <receiver
+            android:name=".notificaciones.ReceptorRecordatorio"
+            android:exported="false" />
+
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"

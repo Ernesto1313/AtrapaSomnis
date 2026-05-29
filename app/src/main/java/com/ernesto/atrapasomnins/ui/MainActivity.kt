@@ -34,6 +34,7 @@ import com.ernesto.atrapasomnins.ui.theme.AzulNocheMedio
 import com.ernesto.atrapasomnins.ui.theme.LilaClaro
 import com.ernesto.atrapasomnins.ui.theme.Morado
 import com.ernesto.atrapasomnins.ui.theme.TextoApagado
+import com.ernesto.atrapasomnins.ui.detalle.DetalleSuenoScreen
 import com.ernesto.atrapasomnins.ui.inicio.InicioScreen
 import com.ernesto.atrapasomnins.ui.registro.RegistroScreen
 import dagger.hilt.android.AndroidEntryPoint
@@ -175,13 +176,13 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(
                             route = Pantalla.DetalleSueno.ruta,
-                            arguments = listOf(
-                                navArgument("id") { type = NavType.StringType }
+                            arguments = listOf(navArgument("id") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val id = backStackEntry.arguments?.getString("id") ?: return@composable
+                            DetalleSuenoScreen(
+                                id = id,
+                                onVolver = { navController.popBackStack() }
                             )
-                        ) {
-                            // Detalle de un sueño concreto
-                            // Se implementará en el siguiente prompt
-                            Box(modifier = Modifier.fillMaxSize())
                         }
                         composable(Pantalla.Estadisticas.ruta) {
                             // Pantalla de estadísticas
