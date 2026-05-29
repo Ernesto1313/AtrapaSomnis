@@ -1,8 +1,10 @@
 package com.ernesto.atrapasomnins.ui.inicio
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,8 +22,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -30,12 +30,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ernesto.atrapasomnins.data.model.EstadoSueno
 import com.ernesto.atrapasomnins.data.model.Sueno
-import com.ernesto.atrapasomnins.ui.SuenoViewModel
-import com.ernesto.atrapasomnins.ui.theme.*
 import com.ernesto.atrapasomnins.sensor.NivelLuz
 import com.ernesto.atrapasomnins.sensor.rememberNivelLuz
+import com.ernesto.atrapasomnins.ui.SuenoViewModel
+import com.ernesto.atrapasomnins.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,11 +56,17 @@ fun InicioScreen(
 
     val suenos by viewModel.suenos.collectAsStateWithLifecycle()
     val etiquetas by viewModel.etiquetas.collectAsStateWithLifecycle()
-    val filtroActivo by viewModel.filtroEtiqueta.collectAsStateWithLifecycle()
 
-    // Lista que se muestra, ya filtrada
-    val suenosMostrados = remember(suenos, filtroActivo) {
-        viewModel.suenosFiltrados()
+    // Recargamos los datos cada vez que la pantalla se hace visible
+    LaunchedEffect(Unit) {
+        viewModel.cargarDatos()
+    }
+
+    // El FAB aparece con un pequeño retraso tras el contenido
+    var fabVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(200)
+        fabVisible = true
     }
 
     Scaffold(
@@ -67,22 +74,31 @@ fun InicioScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.AutoAwesome,
-                            contentDescription = null,
-                            tint = LilaClaro,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = "AtrapaSomnis",
-                            color = LilaClaro,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.AutoAwesome,
+                                contentDescription = null,
+                                tint = LilaClaro,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = "AtrapaSomnis",
+                                color = LilaClaro,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                        }
+                        if (suenos.isNotEmpty()) {
+                            Text(
+                                text = "${suenos.size} sueños registrados",
+                                color = TextoApagado,
+                                fontSize = 11.sp
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -91,14 +107,18 @@ fun InicioScreen(
             )
         },
         floatingActionButton = {
-            // Botón para registrar un sueño nuevo
-            FloatingActionButton(
-                onClick = onNuevoSueno,
-                containerColor = Morado,
-                contentColor = TextoPrincipal,
-                shape = CircleShape
+            AnimatedVisibility(
+                visible = fabVisible,
+                enter = scaleIn(tween(300)) + fadeIn(tween(300))
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Registrar sueño")
+                FloatingActionButton(
+                    onClick = onNuevoSueno,
+                    containerColor = Morado,
+                    contentColor = TextoPrincipal,
+                    shape = CircleShape
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Registrar sueño")
+                }
             }
         }
     ) { padding ->
@@ -108,61 +128,8 @@ fun InicioScreen(
                 .padding(padding)
                 .background(colorFondo)
         ) {
-            // Fila de filtros por etiqueta
-            if (etiquetas.isNotEmpty()) {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Chip para quitar el filtro y ver todos
-                    item {
-                        FilterChip(
-                            selected = filtroActivo == null,
-                            onClick = { viewModel.cambiarFiltro(null) },
-                            label = { Text("Todos") },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Morado,
-                                selectedLabelColor = TextoPrincipal,
-                                containerColor = Color.Transparent,
-                                labelColor = TextoApagado
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = filtroActivo == null,
-                                borderColor = TextoApagado,
-                                selectedBorderColor = Color.Transparent
-                            )
-                        )
-                    }
-                    // Un chip por cada etiqueta disponible
-                    items(etiquetas) { etiqueta ->
-                        FilterChip(
-                            selected = filtroActivo == etiqueta.id,
-                            onClick = {
-                                viewModel.cambiarFiltro(
-                                    if (filtroActivo == etiqueta.id) null else etiqueta.id
-                                )
-                            },
-                            label = { Text(etiqueta.nombre) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Morado,
-                                selectedLabelColor = TextoPrincipal,
-                                containerColor = Color.Transparent,
-                                labelColor = TextoApagado
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = filtroActivo == etiqueta.id,
-                                borderColor = TextoApagado,
-                                selectedBorderColor = Color.Transparent
-                            )
-                        )
-                    }
-                }
-            }
-
             // Lista de sueños o mensaje vacío
-            if (suenosMostrados.isEmpty()) {
+            if (suenos.isEmpty()) {
                 // Pantalla vacía con mensaje motivador
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -198,12 +165,22 @@ fun InicioScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(suenosMostrados, key = { it.id }) { sueno ->
-                        TarjetaSueno(
-                            sueno = sueno,
-                            etiquetasDisponibles = etiquetas,
-                            onClick = { onVerDetalle(sueno.id) }
-                        )
+                    items(suenos, key = { it.id }) { sueno ->
+                        var visible by remember { mutableStateOf(false) }
+                        LaunchedEffect(Unit) { visible = true }
+                        AnimatedVisibility(
+                            visible = visible,
+                            enter = fadeIn(tween(300)) + slideInVertically(
+                                animationSpec = tween(300),
+                                initialOffsetY = { it / 2 }
+                            )
+                        ) {
+                            TarjetaSueno(
+                                sueno = sueno,
+                                etiquetasDisponibles = etiquetas,
+                                onClick = { onVerDetalle(sueno.id) }
+                            )
+                        }
                     }
                 }
             }
@@ -233,7 +210,7 @@ private fun TarjetaSueno(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Cabecera: fecha y estado del sueño
+            // Cabecera: fecha, estado y lucidez
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -244,8 +221,16 @@ private fun TarjetaSueno(
                     color = TextoApagado,
                     fontSize = 12.sp
                 )
-                // Indicador visual del estado
-                EstadoBadge(estado = sueno.estado)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    EstadoBadge(estado = sueno.estado)
+                    // Indicador visual de sueño lúcido
+                    if (sueno.lucido == true) {
+                        Text("✨", fontSize = 14.sp)
+                    }
+                }
             }
 
             when (sueno.estado) {

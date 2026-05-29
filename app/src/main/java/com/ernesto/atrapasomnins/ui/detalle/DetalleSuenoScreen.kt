@@ -1,5 +1,8 @@
 package com.ernesto.atrapasomnins.ui.detalle
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -87,6 +90,13 @@ fun DetalleSuenoScreen(
             )
         }
     ) { padding ->
+        var visible by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) { visible = true }
+
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(tween(400))
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -134,6 +144,7 @@ fun DetalleSuenoScreen(
                 }
             }
         }
+        } // AnimatedVisibility
     }
 
     // Diálogo para confirmar el borrado

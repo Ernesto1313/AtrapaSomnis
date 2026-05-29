@@ -5,6 +5,9 @@ package com.ernesto.atrapasomnins.ui.registro
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -94,7 +97,8 @@ fun RegistroScreen(
         AnimatedContent(
             targetState = pasoActual,
             transitionSpec = {
-                slideInHorizontally { it } togetherWith slideOutHorizontally { -it }
+                (slideInHorizontally(tween(300)) { it } + fadeIn(tween(300))) togetherWith
+                (slideOutHorizontally(tween(300)) { -it } + fadeOut(tween(300)))
             },
             label = "transicion_pasos"
         ) { paso ->
