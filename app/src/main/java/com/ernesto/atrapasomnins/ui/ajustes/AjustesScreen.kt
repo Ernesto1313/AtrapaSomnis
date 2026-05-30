@@ -1,6 +1,8 @@
 package com.ernesto.atrapasomnins.ui.ajustes
 
 import android.content.Context
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,6 +54,37 @@ fun AjustesScreen(
         initialMinute = minutoRecordatorio
     )
 
+    // Comprobamos si el permiso de notificaciones ya está concedido
+    val tienePermisoNotificaciones = remember {
+        mutableStateOf(
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                androidx.core.content.ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            }
+        )
+    }
+
+    // Launcher que recibe el resultado del diálogo de permiso del sistema
+    val lanzadorPermiso = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { concedido ->
+        tienePermisoNotificaciones.value = concedido
+        if (concedido) {
+            // El usuario concedió el permiso, ahora activamos el recordatorio
+            recordatorioActivado = true
+            prefs.edit().putBoolean("recordatorio_activado", true).apply()
+            programarRecordatorioDiario(context, horaRecordatorio, minutoRecordatorio)
+        } else {
+            // El usuario denegó el permiso, nos aseguramos de que quede desactivado
+            recordatorioActivado = false
+            prefs.edit().putBoolean("recordatorio_activado", false).apply()
+        }
+    }
+
     Scaffold(
         containerColor = AzulNoche,
         topBar = {
@@ -97,15 +130,19 @@ fun AjustesScreen(
                         Switch(
                             checked = recordatorioActivado,
                             onCheckedChange = { activado ->
-                                recordatorioActivado = activado
-                                prefs.edit()
-                                    .putBoolean("recordatorio_activado", activado)
-                                    .apply()
                                 if (activado) {
-                                    programarRecordatorioDiario(
-                                        context, horaRecordatorio, minutoRecordatorio
-                                    )
+                                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                        // Android 13 o superior: pedimos permiso explícito
+                                        lanzadorPermiso.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                    } else {
+                                        // Android 12 o inferior: no hace falta permiso explícito
+                                        recordatorioActivado = true
+                                        prefs.edit().putBoolean("recordatorio_activado", true).apply()
+                                        programarRecordatorioDiario(context, horaRecordatorio, minutoRecordatorio)
+                                    }
                                 } else {
+                                    recordatorioActivado = false
+                                    prefs.edit().putBoolean("recordatorio_activado", false).apply()
                                     cancelarRecordatorio(context)
                                 }
                             },
