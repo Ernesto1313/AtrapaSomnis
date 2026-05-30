@@ -72,4 +72,11 @@ class SuenoViewModel @Inject constructor(
             _etiquetas.value = etiquetaRepository.obtenerTodas()
         }
     }
+
+    fun eliminarEtiqueta(id: String) {
+        viewModelScope.launch {
+            etiquetaRepository.eliminar(id)
+            _etiquetas.value = etiquetaRepository.obtenerTodas()
+        }
+    }
 }

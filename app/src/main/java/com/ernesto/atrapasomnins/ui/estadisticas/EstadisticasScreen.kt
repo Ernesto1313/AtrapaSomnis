@@ -108,7 +108,6 @@ fun EstadisticasScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -126,7 +125,7 @@ fun EstadisticasScreen(
                     Text(
                         text = "$porcentajeRecordados%",
                         color = LilaClaro,
-                        fontSize = 56.sp,
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
@@ -225,11 +224,11 @@ fun EstadisticasScreen(
 private fun TarjetaStat(titulo: String, valor: String, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = AzulNocheMedio)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(titulo, color = TextoApagado, fontSize = 12.sp)

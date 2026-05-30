@@ -38,6 +38,16 @@ fun AjustesScreen(
     val nivelLuz = rememberNivelLuz()
 
     val prefs = context.getSharedPreferences("ajustes", Context.MODE_PRIVATE)
+
+
+    // Si no existe la clave, es primera instalación: forzamos todo a false
+    if (!prefs.contains("primera_instalacion")) {
+        prefs.edit()
+            .putBoolean("recordatorio_activado", false)
+            .putBoolean("primera_instalacion", true)
+            .apply()
+    }
+
     var recordatorioActivado by remember {
         mutableStateOf(prefs.getBoolean("recordatorio_activado", false))
     }
@@ -148,7 +158,10 @@ fun AjustesScreen(
                             },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = LilaClaro,
-                                checkedTrackColor = Morado
+                                checkedTrackColor = Morado,
+                                uncheckedThumbColor = TextoApagado,
+                                uncheckedTrackColor = AzulNocheMedio,
+                                uncheckedBorderColor = TextoApagado.copy(alpha = 0.5f)
                             )
                         )
                     }

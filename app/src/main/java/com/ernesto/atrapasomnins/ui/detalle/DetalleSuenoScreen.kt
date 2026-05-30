@@ -130,7 +130,10 @@ fun DetalleSuenoScreen(
 
             if (sueno.causasDespertar.isNotEmpty()) {
                 SeccionDetalle(titulo = "Te despertó") {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         sueno.causasDespertar.forEach { causa ->
                             ChipDetalle(texto = textoDespertar(causa))
                         }
@@ -213,7 +216,10 @@ private fun ContenidoRecordado(
 
     if (sueno.etiquetas.isNotEmpty()) {
         SeccionDetalle(titulo = "Etiquetas") {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 sueno.etiquetas.forEach { idEtiqueta ->
                     val etiqueta = etiquetas.find { it.id == idEtiqueta }
                     if (etiqueta != null) {
