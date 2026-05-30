@@ -46,9 +46,6 @@ fun AjustesScreen(
         mutableStateOf(prefs.getInt("minuto_recordatorio", 0))
     }
 
-    var mostrarDialogoEtiqueta by remember { mutableStateOf(false) }
-    var textoNuevaEtiqueta by remember { mutableStateOf("") }
-
     var mostrarTimePicker by remember { mutableStateOf(false) }
     val timePickerState = rememberTimePickerState(
         initialHour = horaRecordatorio,
@@ -142,67 +139,62 @@ fun AjustesScreen(
 
             // ── Gestión de etiquetas ──────────────────────────
             SeccionAjustes(titulo = "Mis etiquetas") {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val etiquetasPersonalizadas = etiquetas.filter { it.esPersonalizada }
-                    val porCategoria = etiquetasPersonalizadas.groupBy { it.categoria }
+                val etiquetasPersonalizadas = etiquetas.filter { it.esPersonalizada }
 
-                    if (etiquetasPersonalizadas.isEmpty()) {
-                        Text(
-                            "Aún no has creado etiquetas personalizadas",
-                            color = TextoApagado,
-                            fontSize = 13.sp
-                        )
-                    } else {
-                        listOf(
+                if (etiquetasPersonalizadas.isEmpty()) {
+                    Text(
+                        "Aún no has añadido etiquetas personalizadas.\n" +
+                        "Puedes añadirlas al registrar un sueño pulsando +.",
+                        color = TextoApagado,
+                        fontSize = 13.sp
+                    )
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        val grupos = listOf(
                             CategoriaEtiqueta.SUENO to "Sueño",
-                            CategoriaEtiqueta.COMPANERO to "Compañero",
-                            CategoriaEtiqueta.LUGAR to "Lugar",
-                            CategoriaEtiqueta.SUSTANCIA to "Sustancia",
-                            CategoriaEtiqueta.PERSONALIZADA to "Personalizadas"
-                        ).forEach { (cat, nombreCat) ->
-                            val lista = porCategoria[cat]
-                            if (!lista.isNullOrEmpty()) {
-                                Text(
-                                    nombreCat,
-                                    color = TextoApagado,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                lista.forEach { etiqueta ->
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(etiqueta.nombre, color = TextoPrincipal)
-                                        IconButton(onClick = { /* eliminar */ }) {
-                                            Icon(
-                                                Icons.Default.Delete,
-                                                contentDescription = "Eliminar",
-                                                tint = RojoError.copy(alpha = 0.6f),
-                                                modifier = Modifier.size(18.dp)
+                            CategoriaEtiqueta.COMPANERO to "Con quién dormiste",
+                            CategoriaEtiqueta.LUGAR to "Dónde dormiste",
+                            CategoriaEtiqueta.SUSTANCIA to "Sustancias"
+                        )
+                        grupos.forEach { (categoria, tituloGrupo) ->
+                            val lista = etiquetasPersonalizadas.filter { it.categoria == categoria }
+                            if (lista.isNotEmpty()) {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(
+                                        tituloGrupo.uppercase(),
+                                        color = TextoApagado,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        letterSpacing = 1.sp
+                                    )
+                                    lista.forEach { etiqueta ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                etiqueta.nombre,
+                                                color = TextoPrincipal,
+                                                fontSize = 14.sp
                                             )
+                                            IconButton(
+                                                onClick = { viewModel.eliminarEtiqueta(etiqueta.id) },
+                                                modifier = Modifier.size(36.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Delete,
+                                                    contentDescription = "Eliminar ${etiqueta.nombre}",
+                                                    tint = RojoError.copy(alpha = 0.6f),
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
                                         }
+                                        HorizontalDivider(color = TextoApagado.copy(alpha = 0.1f))
                                     }
-                                    HorizontalDivider(color = TextoApagado.copy(alpha = 0.1f))
                                 }
                             }
                         }
-                    }
-
-                    OutlinedButton(
-                        onClick = { mostrarDialogoEtiqueta = true },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = LilaClaro),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp, LilaClaro.copy(alpha = 0.4f)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null,
-                            modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Nueva etiqueta")
                     }
                 }
             }
@@ -229,7 +221,7 @@ fun AjustesScreen(
                         fontSize = 13.sp
                     )
                     val (emoji, descripcion, colorLuz) = when (nivelLuz) {
-                        NivelLuz.OSCURO -> Triple("🌑", "Oscuro — buena hora para dormir", TextoApagado)
+                        NivelLuz.OSCURO -> Triple("🌑", "Oscuro, buena luz para dormir", TextoApagado)
                         NivelLuz.NORMAL -> Triple("🌤️", "Luz normal", LilaClaro)
                         NivelLuz.BRILLANTE -> Triple("☀️", "Muy iluminado", AmarilloAviso)
                     }
@@ -305,58 +297,6 @@ fun AjustesScreen(
             },
             dismissButton = {
                 TextButton(onClick = { mostrarTimePicker = false }) {
-                    Text("Cancelar", color = TextoApagado)
-                }
-            }
-        )
-    }
-
-    // Diálogo para crear nueva etiqueta
-    if (mostrarDialogoEtiqueta) {
-        AlertDialog(
-            onDismissRequest = {
-                mostrarDialogoEtiqueta = false
-                textoNuevaEtiqueta = ""
-            },
-            containerColor = AzulNocheMedio,
-            title = {
-                Text("Nueva etiqueta", color = TextoPrincipal, fontWeight = FontWeight.Bold)
-            },
-            text = {
-                OutlinedTextField(
-                    value = textoNuevaEtiqueta,
-                    onValueChange = { textoNuevaEtiqueta = it },
-                    placeholder = {
-                        Text("Nombre", color = TextoApagado.copy(alpha = 0.5f))
-                    },
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Morado,
-                        unfocusedBorderColor = TextoApagado.copy(alpha = 0.3f),
-                        focusedTextColor = TextoPrincipal,
-                        unfocusedTextColor = TextoPrincipal,
-                        cursorColor = LilaClaro,
-                        focusedContainerColor = AzulNocheMedio,
-                        unfocusedContainerColor = AzulNocheMedio
-                    )
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (textoNuevaEtiqueta.isNotBlank()) {
-                        viewModel.crearEtiqueta(textoNuevaEtiqueta.trim())
-                        textoNuevaEtiqueta = ""
-                        mostrarDialogoEtiqueta = false
-                    }
-                }) {
-                    Text("Crear", color = LilaClaro)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    mostrarDialogoEtiqueta = false
-                    textoNuevaEtiqueta = ""
-                }) {
                     Text("Cancelar", color = TextoApagado)
                 }
             }

@@ -62,8 +62,8 @@ fun PasoContextoNoche(viewModel: RegistroViewModel) {
                         selected = sel,
                         onClick = {
                             viewModel.companeroSeleccionado.value =
-                                if (sel) companeroSeleccionado - etiqueta.id
-                                else companeroSeleccionado + etiqueta.id
+                                if (sel) emptySet()
+                                else setOf(etiqueta.id)
                         },
                         label = { Text(etiqueta.nombre) },
                         colors = chipColors(sel),
@@ -97,8 +97,8 @@ fun PasoContextoNoche(viewModel: RegistroViewModel) {
                         selected = sel,
                         onClick = {
                             viewModel.lugarSeleccionado.value =
-                                if (sel) lugarSeleccionado - etiqueta.id
-                                else lugarSeleccionado + etiqueta.id
+                                if (sel) emptySet()
+                                else setOf(etiqueta.id)
                         },
                         label = { Text(etiqueta.nombre) },
                         colors = chipColors(sel),

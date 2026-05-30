@@ -58,9 +58,6 @@ fun EstadisticasScreen(
             else lista.average()
         }
 
-    // Racha actual: días consecutivos con registro
-    val rachaActual = calcularRachaActual(suenos.map { it.fechaCreacion })
-
     Scaffold(
         containerColor = AzulNoche,
         topBar = {
@@ -180,29 +177,6 @@ fun EstadisticasScreen(
                 )
             }
 
-            // Racha actual
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = AzulNocheMedio)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text("Racha actual", color = TextoApagado, fontSize = 12.sp)
-                        Text(
-                            "$rachaActual días consecutivos",
-                            color = TextoPrincipal,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                    Text("🔥", fontSize = 32.sp)
-                }
-            }
-
             // Etiqueta más frecuente
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -264,23 +238,3 @@ private fun TarjetaStat(titulo: String, valor: String, modifier: Modifier = Modi
     }
 }
 
-// Calcula cuántos días consecutivos lleva el usuario registrando sueños
-private fun calcularRachaActual(timestamps: List<Long>): Int {
-    if (timestamps.isEmpty()) return 0
-    val hoy = java.util.Calendar.getInstance()
-    var racha = 0
-    var diaActual = hoy.clone() as java.util.Calendar
-
-    // Miramos hacia atrás día a día
-    while (true) {
-        val hayRegistroEseDia = timestamps.any { ts ->
-            val cal = java.util.Calendar.getInstance().apply { timeInMillis = ts }
-            cal.get(java.util.Calendar.DAY_OF_YEAR) == diaActual.get(java.util.Calendar.DAY_OF_YEAR) &&
-            cal.get(java.util.Calendar.YEAR) == diaActual.get(java.util.Calendar.YEAR)
-        }
-        if (!hayRegistroEseDia) break
-        racha++
-        diaActual.add(java.util.Calendar.DAY_OF_YEAR, -1)
-    }
-    return racha
-}
